@@ -22,7 +22,24 @@ Here are the requirements:
 
 5. We will be using continuous delivery but not continuous deployment yet, "Product Owner" has to approve the deployment for production environment.
 
-## ARchitecture Design
+## Architecture Design
 
 The team designed the initial architecture as below. Considering the cost, security, performance, high-availability, scalability etc. 
+
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/architectureDiagram.png)
+
+Details of design:
+
+1- All AWS resources will be created by Amazon CloudFormation templates as Infrastructure as Code.
+
+2- TEST environment will be used for different purposes as needed functional testing, load testing, security testing etc. So for optimizing the cost, it is designed to be configurable easily according to the needs.
+
+3- PROD environment's resources will be created when we are ready to go live. And with the approval of the Product Owner. 
+
+4- The architecture diagram shows that TEST has single-AZ RDS DB design but PROD has multi-AZ RDS DB. It is also designed as parameterized, whenever needed we can align TEST and PROD environments.
+
+5- Like application release pipeline, we will also use pipeline for creating the TEST, PROD stages, if needed we can add more stages to the pipeline easily.
+
+6- Source Control is required not only for application codes, it is also mandatory for Infrastructure codes.
+
 
