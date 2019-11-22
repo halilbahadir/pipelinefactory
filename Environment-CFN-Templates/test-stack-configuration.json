@@ -1,0 +1,16 @@
+{
+  "Parameters" : {
+    "VPCIpRange": "10.32",
+    "KeyName" : "EnvKeyPair-Oregon",
+    "InstanceType" : "t3.small",
+    "SSHLocation" : "0.0.0.0/0",
+    "DBClass" : "db.t2.medium",
+    "DBName" : "TestDB",
+    "DBUser" : "TestDBuser",   
+    "DBPassword" : "TestDBPassword",
+    "MultiAZDatabase" : "false",
+    "WebServerCapacity" : "1",
+    "DBAllocatedStorage" : "10",
+    "EnvironmentStageTag" : "TEST"
+  }
+}

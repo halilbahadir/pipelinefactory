@@ -1,0 +1,210 @@
+Parameters:
+  ParentStackName:
+    Description: parent Stack name
+    Type: String
+  ApplicationName:
+    Description: Name of the Application for CodeCommit
+    Type: String
+  BranchName:
+    Description: Name of the Branch for CodeCommit
+    Type: String
+  RepositoryName:
+    Description: CodeComit repository name
+    Type: String
+    Default: This is name for CodeCommit Repository
+  SNSTopic:
+    Description: SNS Topic
+    Type: String
+Resources:
+  EventRule: 
+    Type: "AWS::Events::Rule"
+    Properties: 
+      Description: 'EventRule Description'
+      EventPattern: 
+        source:
+        - aws.codepipeline
+        detail-type:
+        - CodePipeline Pipeline Execution State Change
+        detail:
+          state:
+          - FAILED
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Ref: SNSTopic
+          Id: "PipelineNotificationTopic"
+          InputTransformer:
+            InputTemplate: '"The Pipeline <pipeline> has failed. Go to https://console.aws.amazon.com/codepipeline/home?region=us-east-1#/view/<pipeline>" '
+            InputPathsMap:
+              pipeline: "$.detail.pipeline" 
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete 
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: codepipeline-service
+        PolicyDocument:
+          Statement:
+          - Action:
+            - codecommit:GetBranch
+            - codecommit:GetCommit
+            - codecommit:UploadArchive
+            - codecommit:GetUploadArchiveStatus
+            - codecommit:CancelUploadArchive
+            - codebuild:*
+            Resource: "*"
+            Effect: Allow
+          - Action:
+            - s3:GetObject
+            - s3:GetObjectVersion
+            - s3:GetBucketVersioning
+            Resource: "*"
+            Effect: Allow
+          - Action:
+            - s3:PutObject
+            Resource:
+            - arn:aws:s3:::codepipeline*
+            - arn:aws:s3:::elasticbeanstalk*
+            Effect: Allow
+          - Action:
+            - codedeploy:CreateDeployment
+            - codedeploy:GetApplicationRevision
+            - codedeploy:GetDeployment
+            - codedeploy:GetDeploymentConfig
+            - codedeploy:RegisterApplicationRevision
+            Resource: "*"
+            Effect: Allow
+          - Action:
+            - elasticbeanstalk:*
+            - ec2:*
+            - elasticloadbalancing:*
+            - autoscaling:*
+            - cloudwatch:*
+            - s3:*
+            - sns:*
+            - cloudformation:*
+            - rds:*
+            - sqs:*
+            - ecs:*
+            - iam:PassRole
+            Resource: "*"
+            Effect: Allow
+          - Action:
+            - lambda:InvokeFunction
+            - lambda:ListFunctions
+            Resource: "*"
+            Effect: Allow
+          Version: '2012-10-17'
+  CodePipelineStack:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+      - Name: Source
+        Actions:
+        - InputArtifacts: []
+          Name: Source
+          ActionTypeId:
+            Category: Source
+            Owner: AWS
+            Version: '1'
+            Provider: CodeCommit
+          OutputArtifacts:
+          - Name: !Ref ApplicationName
+          Configuration:
+            BranchName:
+              Ref: BranchName
+            RepositoryName:
+              Ref: RepositoryName
+          RunOrder: 1
+      - Name: Build
+        Actions:
+        - InputArtifacts:
+          - Name: !Ref ApplicationName
+          Name: Build
+          ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Version: '1'
+            Provider: CodeBuild
+          OutputArtifacts:
+          - Name: !Join [ "-", [ !Ref "ApplicationName", "Build" ] ]
+          Configuration:
+            ProjectName:
+              Fn::ImportValue:
+                !Join [ "-", [ !Ref "ParentStackName", "BuildProjectName" ] ]
+          RunOrder: 1
+      - Name: DeployTest
+        Actions:
+          - Name: DeployToTest
+            ActionTypeId:
+              Category: Deploy
+              Owner: AWS
+              Version: '1'
+              Provider: CodeDeploy
+            InputArtifacts:
+              - Name: !Join [ "-", [ !Ref "ApplicationName", "Build" ] ]
+            OutputArtifacts: []
+            Configuration:
+              ApplicationName:
+                Fn::ImportValue:
+                  !Join [ "-", [ !Ref "ParentStackName", "CodeDeployApplicationName" ] ]
+              DeploymentGroupName:
+                Fn::ImportValue:
+                  !Join [ "-", [ !Ref "ParentStackName", "CodeDeployDeploymentGroup","TEST" ] ]
+            RunOrder: 1
+     
+      - Name: DeployProd
+        Actions:
+          - Name: ApproveToProd
+            ActionTypeId:
+              Category: Approval
+              Owner: AWS
+              Provider: Manual
+              Version: '1'
+            Configuration:
+              NotificationArn: !Ref SNSTopic
+              CustomData: !Sub 'A new change set was created for the ${ParentStackName} stack. Do you want to implement the changes?'
+            RunOrder: '1'
+          - Name: DeployToProd
+            ActionTypeId:
+              Category: Deploy
+              Owner: AWS
+              Version: '1'
+              Provider: CodeDeploy
+            InputArtifacts:
+              - Name: !Join [ "-", [ !Ref "ApplicationName", "Build" ] ]
+            OutputArtifacts: []
+            Configuration:
+              ApplicationName:
+                Fn::ImportValue:
+                  !Join [ "-", [ !Ref "ParentStackName", "CodeDeployApplicationName" ] ]
+              DeploymentGroupName:
+                Fn::ImportValue:
+                  !Join [ "-", [ !Ref "ParentStackName", "CodeDeployDeploymentGroup","PROD" ] ]
+            RunOrder: 2  
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+Outputs:
+  PipelineUrl:
+    Value:
+      Fn::Join:
+      - ''
+      - - https://console.aws.amazon.com/codepipeline/home?region=
+        - Ref: AWS::Region
+        - "#/view/"
+        - Ref: CodePipelineStack
+    Description: CodePipeline URL

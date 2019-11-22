@@ -1,0 +1,55 @@
+---
+Description: AWS CodeCommit Template
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+    RepositoryName:
+        Description: AWS CodeCommit Repository Name
+        Type: String
+    RepositoryDescription:
+        Description: AWS CodeCommit Repository Description
+        Type: String
+        Default: This is description for CodeCommit Repository
+    BranchName:
+        Description: AWS CodeCommit Branch Name
+        Type: String
+        Default: master
+        AllowedPattern: "[\\x20-\\x7E]*"
+        ConstraintDescription: Only ASCII characters allowed.
+    TriggerName:
+        Description: AWS CodeCommit Trigger Name
+        Type: String
+        Default: masterTrigger
+        AllowedPattern: "[\\x20-\\x7E]*"
+        ConstraintDescription: Only ASCII characters allowed.
+    SNSTopic:
+        Description: Amazon SNS Topic
+        Type: String
+    ParentStackName:
+        Description: Stack Name of the main 
+        Type: String
+Resources:    
+    CodeRepo:
+        Type: AWS::CodeCommit::Repository
+        Properties:
+            RepositoryName: !Ref RepositoryName
+            RepositoryDescription: !Ref RepositoryDescription
+            Triggers:
+            - Name: !Ref TriggerName
+              CustomData:
+                Ref: AWS::StackName
+              DestinationArn:
+                Ref: SNSTopic
+              Branches:
+              - !Ref BranchName
+              - StackMaster  #Branch Name for the stack pipeline
+              Events:
+              - all
+Outputs:
+    CodeRepoCloneURLHttp:
+        Description: CodeCommit Repository Clone URL HTTP
+        Value: !GetAtt CodeRepo.CloneUrlHttp
+        Export:
+            Name: !Join [ "-", [ !Ref "ParentStackName", "CodeCommitHTTP" ] ]
+    CodeRepoCloneURLSSH:
+        Description: CodeCommit Repository Clone URL SSH
+        Value: !GetAtt CodeRepo.CloneUrlSsh

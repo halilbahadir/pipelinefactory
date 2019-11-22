@@ -1,0 +1,16 @@
+{
+  "Parameters" : {
+    "VPCIpRange": "10.42",
+    "KeyName" : "EnvKeyPair-Oregon",
+    "InstanceType" : "t3.small",
+    "SSHLocation" : "0.0.0.0/0",
+    "DBClass" : "db.t2.small",
+    "DBName" : "ProdDB",
+    "DBUser" : "ProdDBuser",   
+    "DBPassword" : "ProdDBPassword",
+    "MultiAZDatabase" : "true",
+    "WebServerCapacity" : "1",
+    "DBAllocatedStorage" : "10",
+    "EnvironmentStageTag" : "PROD"
+  }
+}

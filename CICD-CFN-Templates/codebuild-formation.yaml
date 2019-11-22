@@ -1,0 +1,71 @@
+---
+Description: AWS CI/CD Pipeline Template
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+#  RepositoryName:
+#    Description: CodeComit repository name
+#    Type: String
+  ParentStackName:
+    Description: parent Stack name of main
+    Type: String
+  TagValue:
+    Type: String
+Resources:
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codebuild.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: codebuild-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+          Version: '2012-10-17'
+  CodeBuildProject:
+      Type: AWS::CodeBuild::Project
+      DependsOn: CodeBuildRole
+      Properties:
+        Name:
+          Ref: ParentStackName
+        Description: Build Project
+        ServiceRole:
+          Fn::GetAtt:
+          - CodeBuildRole
+          - Arn
+        Artifacts:
+          Type: no_artifacts
+        Environment:
+          Type: LINUX_CONTAINER
+          ComputeType: BUILD_GENERAL1_SMALL
+          Image: aws/codebuild/standard:1.0-1.8.0 
+        Source:
+          Location:
+            Fn::ImportValue:
+              !Join [ "-", [ !Ref "ParentStackName", "CodeCommitHTTP" ] ]
+#            Fn::Join:
+#            - ''
+#            - - https://git-codecommit.
+#              - Ref: AWS::Region
+#              - ".amazonaws.com/v1/repos/"
+#              - Ref: RepositoryName
+          Type: CODECOMMIT
+        TimeoutInMinutes: 10
+        Tags:
+        - Key: Owner
+          Value: !Ref TagValue
+Outputs:
+  CodeBuildProject:
+    Description: CodeBuildProjectName
+    Value: !Ref CodeBuildProject
+    Export:
+      Name: !Join [ "-", [ !Ref "ParentStackName", "BuildProjectName" ] ] 

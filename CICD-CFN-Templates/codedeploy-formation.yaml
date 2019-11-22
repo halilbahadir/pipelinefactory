@@ -1,0 +1,126 @@
+Parameters:
+  DeploymentStackName:
+    Description: Name of the AutoScalingGroup parameter in StackName-TEST-ASG
+    Type: String
+  ParentStackName:
+    Description: parent Stack name
+    Type: String
+#  DeploymentEnvironment:
+#    Description: Deployment Environment Test / Prod
+#    Type: String
+#    Default: 'Test'
+Resources:
+  DeployedApplication:
+    Type: AWS::CodeDeploy::Application
+    DependsOn: CodeDeployRolePolicies
+    Properties:
+      ComputePlatform: Server
+    #DependsOn: CodeDeployEC2InstancesStack #DEGISTIR BU ENV durumuna gore olacak..Condition olabilir.
+  AppDeploymentGroupTest:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn: DeployedApplication
+    Properties:
+      ApplicationName:
+        Ref: DeployedApplication
+      AutoScalingGroups:
+        - Fn::ImportValue:
+            !Join [ "-", [ "TEST","Stack","ASG" ] ]
+      DeploymentConfigName: CodeDeployDefault.OneAtATime
+      ServiceRoleArn: !GetAtt  CodeDeployRole.Arn
+  AppDeploymentGroupProd:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn: DeployedApplication
+    Properties:
+      ApplicationName:
+        Ref: DeployedApplication
+      AutoScalingGroups:
+        - Fn::ImportValue:
+            !Join [ "-", [  "PROD","Stack","ASG" ] ]
+      DeploymentConfigName: CodeDeployDefault.OneAtATime
+      ServiceRoleArn: !GetAtt  CodeDeployRole.Arn
+  CodeDeployRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Sid: '1'
+            Effect: Allow
+            Principal:
+              Service:
+                - codedeploy.us-east-1.amazonaws.com
+                - codedeploy.us-west-1.amazonaws.com
+                - codedeploy.us-west-2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Path: /
+  CodeDeployRolePolicies:
+    Type: 'AWS::IAM::Policy'
+    DependsOn: CodeDeployRole
+    Properties:
+      PolicyName: CodeDeployPolicy
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Resource:
+              - '*'
+            Action:
+              - 'ec2:Describe*'
+          - Effect: Allow
+            Resource:
+              - '*'
+            Action:
+              - 'autoscaling:CompleteLifecycleAction'
+              - 'autoscaling:DeleteLifecycleHook'
+              - 'autoscaling:DescribeAutoScalingGroups'
+              - 'autoscaling:DescribeLifecycleHooks'
+              - 'autoscaling:PutLifecycleHook'
+              - 'autoscaling:RecordLifecycleActionHeartbeat'
+              - 'autoscaling:CreateAutoScalingGroup'
+              - 'autoscaling:UpdateAutoScalingGroup'
+              - 'autoscaling:EnableMetricsCollection'
+              - 'autoscaling:DescribeAutoScalingGroups'
+              - 'autoscaling:DescribePolicies'
+              - 'autoscaling:DescribeScheduledActions'
+              - 'autoscaling:DescribeNotificationConfigurations'
+              - 'autoscaling:DescribeLifecycleHooks'
+              - 'autoscaling:SuspendProcesses'
+              - 'autoscaling:ResumeProcesses'
+              - 'autoscaling:AttachLoadBalancers'
+              - 'autoscaling:PutScalingPolicy'
+              - 'autoscaling:PutScheduledUpdateGroupAction'
+              - 'autoscaling:PutNotificationConfiguration'
+              - 'autoscaling:PutLifecycleHook'
+              - 'autoscaling:DescribeScalingActivities'
+              - 'autoscaling:DeleteAutoScalingGroup'
+              - 'ec2:DescribeInstances'
+              - 'ec2:DescribeInstanceStatus'
+              - 'ec2:TerminateInstances'
+              - 'tag:GetResources'
+              - 'sns:Publish'
+              - 'cloudwatch:DescribeAlarms'
+              - 'cloudwatch:PutMetricAlarm'
+              - 'elasticloadbalancing:DescribeLoadBalancers'
+              - 'elasticloadbalancing:DescribeInstanceHealth'
+              - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+              - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+              - 'elasticloadbalancing:DescribeTargetGroups'
+              - 'elasticloadbalancing:DescribeTargetHealth'
+              - 'elasticloadbalancing:RegisterTargets'
+              - 'elasticloadbalancing:DeregisterTargets'
+      Roles:
+        - !Ref CodeDeployRole
+Outputs:
+  CodeDeployApplicationName:
+    Description: CodeDeployApplicationName
+    Value: !Ref DeployedApplication
+    Export:
+      Name: !Join [ "-", [ !Ref "ParentStackName", "CodeDeployApplicationName" ] ] 
+  CodeDeployDeploymentGroupTest:
+    Description: CodeDeployDeploymentGroupTest
+    Value: !Ref AppDeploymentGroupTest
+    Export:
+      Name: !Join [ "-", [ !Ref "ParentStackName", "CodeDeployDeploymentGroup", "TEST" ] ] 
+  CodeDeployDeploymentGroupProd:
+    Description: CodeDeployDeploymentGroupProd
+    Value: !Ref AppDeploymentGroupProd
+    Export:
+      Name: !Join [ "-", [ !Ref "ParentStackName", "CodeDeployDeploymentGroup", "PROD" ] ] 

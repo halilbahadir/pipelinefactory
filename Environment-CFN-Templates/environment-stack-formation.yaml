@@ -1,0 +1,1022 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: >-
+  AWS CloudFormation Sample Template ELBWithLockedDownAutoScaledInstances:
+  Create a load balanced, Auto Scaled sample website where the instances are
+  locked down to only accept traffic from the load balancer. This example
+  creates an Auto Scaling group behind a load balancer with a simple health
+  check. **WARNING** This template
+  creates one or more Amazon EC2 instances and an Application Load Balancer. You
+  will be billed for the AWS resources used if you create a stack from this
+  template.
+Parameters:
+  VPCIpRange:
+    Description: First 2 section of CIDR, like in format 10.42
+    Type: String
+    Default: 10.42
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})'
+    ConstraintDescription: It must be in valid IP (first two section) format .
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: It must be the name of an existing EC2 KeyPair.
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t3.small
+    AllowedValues:
+      - t2.nano
+      - t2.micro 
+      - t2.small
+      - t2.medium
+      - t2.large 
+      - t2.xlarge 
+      - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - g3.8xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r3.12xlarge
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+    ConstraintDescription: It must be a valid EC2 instance type.
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+  EnvironmentStageTag:
+    Description: Stack Environment Tag
+    Type: String
+    Default: "TEST"
+    AllowedValues:
+      - DEV
+      - TEST
+      - UAT
+      - PROD
+  DBClass:
+    Description: Database instance class
+    Type: String
+    Default: db.t2.small
+    AllowedValues:
+      - db.t1.micro
+      - db.m1.small
+      - db.m1.medium
+      - db.m1.large
+      - db.m1.xlarge
+      - db.m2.xlarge
+      - db.m2.2xlarge
+      - db.m2.4xlarge
+      - db.m3.medium
+      - db.m3.large
+      - db.m3.xlarge
+      - db.m3.2xlarge
+      - db.m4.large
+      - db.m4.xlarge
+      - db.m4.2xlarge
+      - db.m4.4xlarge
+      - db.m4.10xlarge
+      - db.r3.large
+      - db.r3.xlarge
+      - db.r3.2xlarge
+      - db.r3.4xlarge
+      - db.r3.8xlarge
+      - db.m2.xlarge
+      - db.m2.2xlarge
+      - db.m2.4xlarge
+      - db.cr1.8xlarge
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+    ConstraintDescription: must select a valid database instance type.
+  DBName:
+    Default: applicationdb
+    Description: Application database name
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBUser:
+    NoEcho: 'true'
+    Description: Username of the database admin account
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password of the database admin account
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  MultiAZDatabase:
+    Default: 'false'
+    Description: Create a Multi-AZ MySQL Amazon RDS database instance
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    ConstraintDescription: must be either true or false.
+  WebServerCapacity:
+    Default: '1'
+    Description: The initial number of WebServer instances
+    Type: Number
+    MinValue: '1'
+    MaxValue: '5'
+    ConstraintDescription: must be between 1 and 5 EC2 instances.
+  DBAllocatedStorage:
+    Default: '5'
+    Description: Storage size of the database (Gb)
+    Type: Number
+    MinValue: '5'
+    MaxValue: '1024'
+    ConstraintDescription: must be between 5 and 1024Gb.
+Mappings:
+  SubnetTypeIpRanges:
+    public:
+      RANGE: 0.0/17
+  publicSubnetConfig:
+    publicSubnet01:
+      CIDR: 10.0/24
+    publicSubnet02:
+      CIDR: 11.0/24   
+  privateSubnetConfig:
+    privateSubnet01:
+      CIDR: 20.0/24
+    privateSubnet02:
+      CIDR: 21.0/24         
+  AWSInstanceType2Arch:
+    t2.nano:
+      Arch: HVM64
+    t2.micro:
+      Arch: HVM64
+    t2.small:
+      Arch: HVM64
+    t2.medium:
+      Arch: HVM64
+    t2.large:
+      Arch: HVM64
+    t2.xlarge:
+      Arch: HVM64
+    t2.2xlarge:
+      Arch: HVM64
+    t3.nano:
+      Arch: HVM64
+    t3.micro:
+      Arch: HVM64
+    t3.small:
+      Arch: HVM64
+    t3.medium:
+      Arch: HVM64
+    t3.large:
+      Arch: HVM64
+    t3.xlarge:
+      Arch: HVM64
+    t3.2xlarge:
+      Arch: HVM64
+    m4.large:
+      Arch: HVM64
+    m4.xlarge:
+      Arch: HVM64
+    m4.2xlarge:
+      Arch: HVM64
+    m4.4xlarge:
+      Arch: HVM64
+    m4.10xlarge:
+      Arch: HVM64
+    m5.large:
+      Arch: HVM64
+    m5.xlarge:
+      Arch: HVM64
+    m5.2xlarge:
+      Arch: HVM64
+    m5.4xlarge:
+      Arch: HVM64
+    m5.10xlarge:
+      Arch: HVM64
+    c5.large:
+      Arch: HVM64
+    c5.xlarge:
+      Arch: HVM64
+    c5.2xlarge:
+      Arch: HVM64
+    c5.4xlarge:
+      Arch: HVM64
+    c5.9xlarge:
+      Arch: HVM64
+    r5.large:
+      Arch: HVM64
+    r5.xlarge:
+      Arch: HVM64
+    r5.2xlarge:
+      Arch: HVM64
+    r5.4xlarge:
+      Arch: HVM64
+    r5.12xlarge:
+      Arch: HVM64
+    i3.xlarge:
+      Arch: HVM64
+    i3.2xlarge:
+      Arch: HVM64
+    i3.4xlarge:
+      Arch: HVM64
+    i3.8xlarge:
+      Arch: HVM64
+    d2.xlarge:
+      Arch: HVM64
+    d2.2xlarge:
+      Arch: HVM64
+    d2.4xlarge:
+      Arch: HVM64
+    d2.8xlarge:
+      Arch: HVM64
+  AWSInstanceType2NATArch:
+    t2.nano:
+      Arch: NATHVM64
+    t2.micro:
+      Arch: NATHVM64
+    t2.small:
+      Arch: NATHVM64
+    t2.medium:
+      Arch: NATHVM64
+    t2.large:
+      Arch: NATHVM64
+    t2.xlarge:
+      Arch: NATHVM64
+    t2.2xlarge:
+      Arch: NATHVM64
+    t3.nano:
+      Arch: NATHVM64
+    t3.micro:
+      Arch: NATHVM64
+    t3.small:
+      Arch: NATHVM64
+    t3.medium:
+      Arch: NATHVM64
+    t3.large:
+      Arch: NATHVM64
+    t3.xlarge:
+      Arch: NATHVM64
+    t3.2xlarge:
+      Arch: NATHVM64
+    m4.large:
+      Arch: NATHVM64
+    m4.xlarge:
+      Arch: NATHVM64
+    m4.2xlarge:
+      Arch: NATHVM64
+    m4.4xlarge:
+      Arch: NATHVM64
+    m4.10xlarge:
+      Arch: NATHVM64
+    m5.large:
+      Arch: NATHVM64
+    m5.xlarge:
+      Arch: NATHVM64
+    m5.2xlarge:
+      Arch: NATHVM64
+    m5.4xlarge:
+      Arch: NATHVM64
+    m5.10xlarge:
+      Arch: NATHVM64
+    c5.large:
+      Arch: NATHVM64
+    c5.xlarge:
+      Arch: NATHVM64
+    c5.2xlarge:
+      Arch: NATHVM64
+    c5.4xlarge:
+      Arch: NATHVM64
+    c5.9xlarge:
+      Arch: NATHVM64
+    r5.large:
+      Arch: NATHVM64
+    r5.xlarge:
+      Arch: NATHVM64
+    r5.2xlarge:
+      Arch: NATHVM64
+    r5.4xlarge:
+      Arch: NATHVM64
+    r5.12xlarge:
+      Arch: NATHVM64
+    i3.xlarge:
+      Arch: NATHVM64
+    i3.2xlarge:
+      Arch: NATHVM64
+    i3.4xlarge:
+      Arch: NATHVM64
+    i3.8xlarge:
+      Arch: NATHVM64
+    d2.xlarge:
+      Arch: NATHVM64
+    d2.2xlarge:
+      Arch: NATHVM64
+    d2.4xlarge:
+      Arch: NATHVM64
+    d2.8xlarge:
+      Arch: NATHVM64
+  AWSRegionArch2AMI:
+    us-east-1:
+      HVM64: ami-0080e4c5bc078760e
+    us-west-2:
+      HVM64: ami-01e24be29428c15b2
+    us-west-1:
+      HVM64: ami-0ec6517f6edbf8044
+    eu-west-1:
+      HVM64: ami-08935252a36e25f85
+    eu-west-2:
+      HVM64: ami-01419b804382064e4
+    eu-west-3:
+      HVM64: ami-0dd7e7ed60da8fb83
+    eu-central-1:
+      HVM64: ami-0cfbf4f6db41068ac
+    eu-north-1:
+      HVM64: ami-86fe70f8
+    ap-northeast-1:
+      HVM64: ami-00a5245b4816c38e6
+    ap-northeast-2:
+      HVM64: ami-00dc207f8ba6dc919
+    ap-northeast-3:
+      HVM64: ami-0b65f69a5c11f3522
+    ap-southeast-1:
+      HVM64: ami-05b3bcf7f311194b3
+    ap-southeast-2:
+      HVM64: ami-02fd0b06f06d93dfc
+    ap-south-1:
+      HVM64: ami-0ad42f4f66f6c1cc9
+    us-east-2:
+      HVM64: ami-0cd3dfa4e37921605
+    ca-central-1:
+      HVM64: ami-07423fb63ea0a0930
+    sa-east-1:
+      HVM64: ami-05145e0b28ad8e0b2
+    cn-north-1:
+      HVM64: ami-053617c9d818c1189
+    cn-northwest-1:
+      HVM64: ami-0f7937761741dc640
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 
+        Fn::Join: 
+          - ''
+          - - Ref: VPCIpRange
+            - .
+            - 0.0/16      
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-vpc
+  PublicSubnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::Join:
+          - ''
+          - - Ref: VPCIpRange
+            - .
+            - Fn::FindInMap: 
+                - publicSubnetConfig
+                - publicSubnet01
+                - CIDR      
+      AvailabilityZone: 
+        Fn::Select:
+          - '0'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-subnetpublic01   
+  PublicSubnet02:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::Join:
+          - ''
+          - - Ref: VPCIpRange
+            - .
+            - Fn::FindInMap: 
+                - publicSubnetConfig
+                - publicSubnet02
+                - CIDR 
+      AvailabilityZone: 
+        Fn::Select:
+          - '1'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-subnetpublic02  
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: 
+            Fn::Sub: ${AWS::StackName}-vpcigw
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: 
+        Ref: VPC
+      InternetGatewayId: 
+        Ref: InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: 
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: 
+            Fn::Sub: ${AWS::StackName}-PublicRouteTable
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: 
+        Ref: PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: 
+        Ref: InternetGateway
+  PublicSubnetRTAssociation01:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: 
+        Ref: PublicSubnet01
+      RouteTableId: 
+        Ref: PublicRouteTable
+  PublicSubnetRTAssociation02:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: 
+        Ref: PublicSubnet02
+      RouteTableId: 
+        Ref: PublicRouteTable        
+  PublicNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: 
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: 
+            Fn::Sub: ${AWS::StackName}-PublicNetworkAcl
+  InboundPublicNAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: 
+        Ref: PublicNetworkAcl
+      RuleNumber: '2000'
+      Protocol: '-1'
+      RuleAction: allow
+      Egress: 'false'
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: '0'
+        To: '65535'
+  OutboundPublicNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: 
+        Ref: PublicNetworkAcl
+      RuleNumber: '2000'
+      Protocol: '-1'
+      RuleAction: allow
+      Egress: 'true'
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: '0'
+        To: '65535'
+  PublicSubnetNetworkAclAssociation01:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: 
+        Ref: PublicSubnet01
+      NetworkAclId: 
+        Ref: PublicNetworkAcl 
+  PublicSubnetNetworkAclAssociation02:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: 
+        Ref: PublicSubnet02
+      NetworkAclId: 
+        Ref: PublicNetworkAcl                              
+  PrivateSubnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::Join:
+          - ''
+          - - Ref: VPCIpRange
+            - .
+            - Fn::FindInMap: 
+                - privateSubnetConfig
+                - privateSubnet01
+                - CIDR 
+      AvailabilityZone: 
+        Fn::Select:
+          - '0'
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-subnetprivate1 
+  PrivateSubnet02:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Fn::Join:
+          - ''
+          - - Ref: VPCIpRange
+            - .
+            - Fn::FindInMap: 
+                - privateSubnetConfig
+                - privateSubnet02
+                - CIDR 
+      AvailabilityZone: 
+        Fn::Select:
+          - '1'
+          - Fn::GetAZs:
+              Ref: AWS::Region      
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-subnetprivate2               
+  NAT:
+    DependsOn: PublicSubnetNetworkAclAssociation01
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - EIP
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet01
+      Tags:
+        - Key: Name
+          Value: 
+            Fn::Sub: ${AWS::StackName}-NATGateway
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  PrivateRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: 
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: 
+            Fn::Sub: ${AWS::StackName}-PrivateRouteTable
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NAT  
+  PrivateSubnetRTAssociation01:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: 
+          Ref: PrivateSubnet01
+        RouteTableId: 
+          Ref: PrivateRouteTable
+  PrivateSubnetRTAssociation02:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: 
+        Ref: PrivateSubnet02
+      RouteTableId: 
+        Ref: PrivateRouteTable   
+  WebAppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole'
+        - 'arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess'
+        - 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'
+        - 'arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess'
+      Path: /
+  StackRolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName:
+        Fn::Join:
+          - '-'
+          - - "BackendRole"
+            - Ref: EnvironmentStageTag
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'elasticloadbalancing:Describe*'
+              - 'elasticloadbalancing:DeregisterTargets'
+              - 'elasticloadbalancing:RegisterTargets'
+              - 'autoscaling:Describe*'
+              - 'autoscaling:EnterStandby'
+              - 'autoscaling:ExitStandby'
+              - 'autoscaling:UpdateAutoScalingGroup'
+              - 'autoscaling:SuspendProcesses'
+              - 'autoscaling:ResumeProcesses'
+            Resource: '*'
+      Roles:
+        - Ref: WebAppRole  
+  WebAppInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - Ref: WebAppRole
+  WebServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup 
+    Properties:
+      AutoScalingGroupName:
+        Fn::Join:
+          - '-'
+          - - "ApplicationASGroup"
+            - Ref: EnvironmentStageTag
+      VPCZoneIdentifier:
+        - Ref: PrivateSubnet01
+        - Ref: PrivateSubnet02
+      LaunchConfigurationName:
+        Ref: LaunchConfig
+      MinSize: '1'
+      MaxSize: '5'
+      TargetGroupARNs:
+      - Ref: ALBTargetGroup
+      DesiredCapacity: !Ref WebServerCapacity
+      Tags:
+      - Key: Name
+        Value: ApplicationWebHost
+        PropagateAtLaunch: 'true' 
+      - Key: Environment Stage
+        PropagateAtLaunch: "true"
+        Value: !Ref EnvironmentStageTag
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: '1'
+        MaxBatchSize: '1'
+        PauseTime: PT15M
+        WaitOnResourceSignals: 'true'
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      Comment: Install a simple application to test
+      'AWS::CloudFormation::Init':
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /home/ec2-user/node-website/app.js:
+              content:
+                'Fn::Join':
+                  - |+
+
+                  - - var http = require('http');
+                    - http.createServer(function (req, res) {
+                    - >-
+                      res.writeHead(200, {'Content-Type': 'text/plain'});
+                      res.end('Hello World!');
+                    - >-
+                      }).listen(80);
+              mode: '000644'
+              owner: root
+              group: root
+            /etc/cfn/cfn-hup.conf:
+              content:
+                'Fn::Join':
+                  - ''
+                  - - |
+                      [main]
+                    - stack=
+                    - Ref: 'AWS::StackId'
+                    - |+
+                    
+                    - role=
+                    - Ref: 'WebAppRole'
+                    - |+                    
+
+                    - region=
+                    - Ref: 'AWS::Region'
+                    - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content:
+                'Fn::Join':
+                  - ''
+                  - - |
+                      [cfn-auto-reloader-hook]
+                    - |
+                      triggers=post.update
+                    - >
+                      path=Resources.LaunchConfig.Metadata.AWS::CloudFormation::Init
+                    - 'action=/opt/aws/bin/cfn-init -v '
+                    - '         --stack '
+                    - Ref: 'AWS::StackName'
+                    - '         --resource LaunchConfig '
+                    - '         --role '
+                    - Ref: 'WebAppRole'                    
+                    - '         --region '
+                    - Ref: 'AWS::Region'
+                    - |+
+
+                    - |
+                      runas=root
+              mode: '000400'
+              owner: root
+              group: root
+          services:
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf    
+    Properties: 
+      IamInstanceProfile: 
+        Ref: WebAppInstanceProfile      
+      ImageId: 
+        Fn::FindInMap: 
+          - "AWSRegionArch2AMI"
+          - Ref: "AWS::Region"
+          - Fn::FindInMap: 
+              - "AWSInstanceType2Arch"
+              - Ref: InstanceType
+              - Arch  
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      UserData:
+        'Fn::Base64':
+          'Fn::Join':
+            - ''
+            - - |
+                #!/bin/bash -xe
+              - |
+                yum install -y git
+              - |
+                yum install -y ruby
+              - |
+                yum update -y aws-cfn-bootstrap
+              - |
+                # Install pip and python dev libraries.
+                yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+              - | 
+                yum install -y python27-devel python27-pip gcc
+              - |
+                yum install -y python-pip
+              - |
+                yum install -y wget
+              - |                              
+                 mkdir /home/ec2-user/node-website                              
+              - |+
+              - '/opt/aws/bin/cfn-init -v '
+              - '         --stack '
+              - Ref: 'AWS::StackName'
+              - '         --resource LaunchConfig '
+              - '         --role '
+              - Ref: 'WebAppRole'
+              - '         --region '
+              - Ref: 'AWS::Region'
+              - |+
+
+              - |
+                #!/bin/bash -xe
+                cd /home/ec2-user/node-website                
+              - |
+                curl -sL https://rpm.nodesource.com/setup_8.x | bash -
+              - |
+                yum install -y nodejs
+              - |
+                npm install forever -g
+              - |
+                export PORT=80
+              - |              
+                forever start app.js
+              - |+
+
+              - |                              
+                cd /home/ec2-user/
+              - 'wget https://aws-codedeploy-'
+              - !Ref 'AWS::Region'
+              - |
+                .s3.amazonaws.com/latest/install
+              - |
+                chmod +x ./install
+              - |  
+                ./install auto
+              - |
+                service codedeploy-agent start
+              - |+
+
+              - |
+                # making the website
+              - '/opt/aws/bin/cfn-signal -e $? '
+              - '         --stack '
+              - Ref: 'AWS::StackName'
+              - '         --resource WebServerGroup '
+              - '         --region '
+              - Ref: 'AWS::Region'
+              - |+              
+      SecurityGroups: 
+        - Ref: "InstanceSecurityGroup"
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets:
+        - Ref: PublicSubnet01
+        - Ref: PublicSubnet02
+      SecurityGroups:
+        - Fn::GetAtt: LoadBalancerSecurityGroup.GroupId
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-ALB        
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: ALBTargetGroup
+      LoadBalancerArn:
+        Ref: ApplicationLoadBalancer
+      Port: '80'
+      Protocol: HTTP
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name:
+        Fn::Join:
+          - '-'
+          - - "ApplicationALBTG"
+            - Ref: EnvironmentStageTag
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: 
+          Fn::Sub: ${AWS::StackName}-TG         
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access and HTTP access on the inbound port
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Ref: VPC        
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access and HTTP access on the inbound port
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          SourceSecurityGroupId:
+            'Fn::Select':
+              - 0
+              - 'Fn::GetAtt':
+                  - ApplicationLoadBalancer
+                  - SecurityGroups
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation       
+      VpcId:
+        Ref: VPC
+  DBEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Open database for access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '3306'
+          ToPort: '3306'
+          SourceSecurityGroupId: !Ref InstanceSecurityGroup
+      VpcId: !Ref VPC
+  DBSubnetGroups:  
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: DB Subnet Group
+      DBSubnetGroupName: 
+        Fn::Join:
+          - '-'
+          - - "RDSSubnetGroup"
+            - Ref: EnvironmentStageTag
+      SubnetIds: 
+        - Ref: PrivateSubnet01
+        - Ref: PrivateSubnet02
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !Ref DBName
+      Engine: MySQL
+      MultiAZ: !Ref MultiAZDatabase
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPassword
+      DBInstanceClass: !Ref DBClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      DBSubnetGroupName: !Ref DBSubnetGroups
+      VPCSecurityGroups:
+        - !GetAtt 
+          - DBEC2SecurityGroup
+          - GroupId
+Outputs:
+  URL:
+    Description: URL of the website
+    Value:
+      'Fn::Join':
+        - ''
+        - - 'http://'
+          - 'Fn::GetAtt':
+              - ApplicationLoadBalancer
+              - DNSName
+  ALBTargetGroup:
+    Value: 
+      'Fn::GetAtt' : ALBTargetGroup.TargetGroupName
+    Description: TargetGroup Name     
+  ASGroup:
+    Value: 
+      Ref: WebServerGroup
+    Description: AutoScaling Group Name
+    Export:
+      Name: !Join [ "-", [!Ref "EnvironmentStageTag","Stack","ASG" ] ]

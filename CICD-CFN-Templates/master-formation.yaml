@@ -1,0 +1,164 @@
+---
+Description: AWS CI/CD Pipeline Template
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  BucketName:
+    Description: S3 Bucket Name for CICD Templates
+    Type: String
+    Default: Projects-Environment-Stacks-Repo
+  RepositoryName:
+    Description: AWS CodeCommit Repository Name
+    Type: String
+  RepositoryDescription:
+    Description: AWS CodeCommit Repository Description
+    Type: String
+    Default: This is description for CodeCommit Repository
+  BranchName:
+    Description: AWS CodeCommit Branch Name
+    Type: String
+    Default: master
+    AllowedPattern: "[\\x20-\\x7E]*"
+    ConstraintDescription: Only ASCII characters allowed.
+  TriggerName:
+    Description: AWS CodeCommit Trigger Name
+    Type: String
+    Default: masterTrigger
+    AllowedPattern: "[\\x20-\\x7E]*"
+    ConstraintDescription: Only ASCII characters allowed.
+  EmailAddress:
+    Description: Email Address for sending SNS notifications for CI/CD
+    Type: String
+  DeploymentStackName:
+    Description: Name of the AutoScalingGroup Name in Deployment Stack
+    Type: String
+  ApplicationName:
+    Description: Name of the Application for AWS CodeCommit used in CI/CD pipeline.
+    Type: String
+Metadata:
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "AWS CodeCommit Configuration"
+        Parameters: 
+          - RepositoryName
+          - RepositoryDescription
+          - BranchName
+          - TriggerName
+      - 
+        Label: 
+          default: "AWS CodePipeline Configuration"
+        Parameters: 
+          - BucketName 
+          - ApplicationName
+          - DeploymentStackName
+          - EmailAddress
+Resources:
+  SNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        Subscription:
+        - Endpoint:
+            Ref: EmailAddress
+          Protocol: email
+  CodeCommitStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:
+        Fn::Join:
+          - ''
+          - - "https://"
+            - Ref: BucketName
+            - ".s3-"
+            - Ref: AWS::Region
+            - ".amazonaws.com/CICDScripts/codecommit-formation.yaml"
+
+      TimeoutInMinutes: '60'
+      Parameters:
+        BranchName:
+          Ref: BranchName
+        RepositoryDescription:
+          Ref: RepositoryDescription
+        RepositoryName:
+          Ref: RepositoryName
+        TriggerName:
+          Ref: TriggerName
+        SNSTopic:
+          Ref: SNSTopic
+        ParentStackName:
+          Ref: AWS::StackName
+  CodeBuildStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: CodeCommitStack
+    Properties:
+      TemplateURL:
+        Fn::Join:
+          - ''
+          - - "https://"
+            - Ref: BucketName
+            - ".s3-"
+            - Ref: AWS::Region
+            - ".amazonaws.com/CICDScripts/codebuild-formation.yaml"
+      TimeoutInMinutes: '60'
+      Parameters:
+        TagValue:
+          Fn::Join:
+          - ''
+          - - Ref: AWS::StackName
+            - "_Build"
+#        RepositoryName:
+#          Ref: RepositoryName
+        ParentStackName:
+          Ref: AWS::StackName
+
+  CodeDeployStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: CodeBuildStack
+    Properties:
+      TemplateURL:
+        Fn::Join:
+          - ''
+          - - "https://"
+            - Ref: BucketName
+            - ".s3-"
+            - Ref: AWS::Region
+            - ".amazonaws.com/CICDScripts/codedeploy-formation.yaml"      
+      TimeoutInMinutes: '60'
+      Parameters:
+        DeploymentStackName:
+          Ref: DeploymentStackName
+        ParentStackName:
+          Ref: AWS::StackName
+#        DeploymentEnvironment: "TEST"
+  CodePipelineStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: CodeDeployStack
+    Properties:
+      TemplateURL:
+        Fn::Join:
+          - ''
+          - - "https://"
+            - Ref: BucketName
+            - ".s3-"
+            - Ref: AWS::Region
+            - ".amazonaws.com/CICDScripts/codepipeline-formation.yaml"      
+      TimeoutInMinutes: '60'
+      Parameters:
+        ParentStackName:
+          Ref: AWS::StackName
+        ApplicationName:
+          Ref: ApplicationName
+        BranchName:
+          Ref: BranchName
+        RepositoryName:
+          Ref: RepositoryName
+        SNSTopic:
+          Ref: SNSTopic
+Outputs:
+  SNSTopicStack:
+    Description: SNS ARN
+    Value: !Ref SNSTopic
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", "SNSTopicARN" ] ]
+  CodeRepoCloneURLHttp:
+    Value: !GetAtt CodeCommitStack.Outputs.CodeRepoCloneURLHttp
