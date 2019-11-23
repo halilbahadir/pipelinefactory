@@ -172,7 +172,7 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
 
 19. It will take some time to create all TEST environment resources on AWS. In AWS CloudFormation Dashboard, check if _Test-ProjectQ_ status is **CREATE_COMPLETE**. 
 
-![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/10-TestStack.png).
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/10-TestStack.png)
 
 20. As you can see above in the figure, the outputs tab has the URL key, that is the Application Load Balancer URL. Open link in a new browser tab. While creating the Amazon EC2 instance, we added (by user data) a basic page, to see if the instance is running. This is the page that you see in browser saying "Hello World!"
 
@@ -182,8 +182,14 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
 
 23. Pipeline will start the _ProdStage_ stage, with _CreateChangeSet_ action. Click on the "Details" link in the action frame.
 
-24. It will open a browser tab for list of the changes. Because there is no resource in the PROD stage so all AWS resources. will be created.
+24. It will open a browser tab for list of the changes. Because there is no resource in the PROD stage so all AWS resources  are tagged as **ADD**.
 
-![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/12-prodChangeSets.png) 
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/12-prodChangeSets.png)
+
+AWS CloudFormation did not create any AWS Resources for the PROD stage yet, it only showed the  resources changes if you execute.
+
+Let's stop in here..Because we don't need the PROD environment yet.
+
+IT's [DEVELOPER](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/developer.md) TIME..
 
 Congrats...You have successfully created the TEST environment.
