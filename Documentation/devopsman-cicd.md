@@ -62,7 +62,7 @@ https://hb-projectq.s3-us-west-2.amazonaws.com/CICDScripts/master-formation.yaml
   
   * CodeCommitStack (codecommit-formation.yaml) 
   
-   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/15-CFN-cicd-commit.png)
+   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/15-%20CFN-cicd-commit.png)
  
   * CodeBuildStack (codebuild-formation.yaml)
   
