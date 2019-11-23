@@ -118,23 +118,42 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
  
  ```
  
- 12. We need **stack-pipeline.yml** file's URL address for using in AWS CloudFormation. You can get URL from Amazon S3 Console, from the **stack-pipeline.yml** object detail page or you can know from the S3 URL template
+ 12. We need **stack-pipeline.yml** file's URL address for using in AWS CloudFormation. You can get URL from Amazon S3 Console,the **stack-pipeline.yml** object's detail page or you can know from the S3 URL template
  
+ ```
    https://<<BUCKET-NAME>>.s3-<<AWS REGION CODE>>.amazonaws.com/<<FOLDER NAME/<<FILE NAME>>
- 
+ ```
  So here is the URL
  
  ```
  https://hb-projectq.s3-us-west-2.amazonaws.com/EnvScripts/stack-pipeline.yml
  ```
  
-  * PipelineName: **PL-ProjectQ**
-  * RepositoryName: **CFN-Templates-Repo**
-  * TemplateFileName: **EnvScripts/environment-stack-formation.yaml**  
-  * TestStackName: **Test-ProjectQ**
-  * TestStackConfig: **EnvScripts/test-stack-configuration.json**
-  * ProdStackName: **Prod-ProjectQ**
-  * ProdStackConfig: **EnvScripts/prod-stack-configuration.json**
-  * ChangeSetName: **UpdatePreview-ProjectQ** 
+ 13. Open AWS CloudFormation Service Dashboard.
  
-  
+ ![Atlt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/5-CFN-Dashboard.png)
+ 
+ 
+ 14. It's time to create our project environments stack.
+   
+   * Step 1
+     * Click _Create Stack / With New Resources (standard)_
+     * Our template is ready, Template Source is Amazon S3 and the URL is above. Paste the URL and NEXT.
+   * Step 2
+     * StackName: **ProjectQEnvStack**
+     * PipelineName: **PL-ProjectQ**
+     * RepositoryName: **CFN-Templates-Repo**
+     * Email: **halilb@amazon.com**
+     * TemplateFileName: **EnvScripts/environment-stack-formation.yaml**  
+     * TestStackName: **Test-ProjectQ**
+     * TestStackConfig: **EnvScripts/test-stack-configuration.json**
+     * ChangeSetName: **UpdatePreview-ProjectQ** 
+     * ProdStackName: **Prod-ProjectQ**
+     * ProdStackConfig: **EnvScripts/prod-stack-configuration.json**
+   * Step 3
+   * Step 4 
+     * Check the **I acknowledge that AWS CloudFormation might create IAM resources.** in capabilities.
+   
+   Click _Create Stack_
+ 
+    
