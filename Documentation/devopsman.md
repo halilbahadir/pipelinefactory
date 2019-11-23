@@ -1,7 +1,7 @@
-## DEVOPS ENGINEER
+## PIPELINING INFRASTRUCTURE  by DEVOPS ENGINEER
 
 
-As a devops engineeer, you are responsible for creating and managing the TEST / PROD Stages resources in an automated way. To do so you will be designing a pipeline using AWS CodePipeline services. As you can see below, 
+As a devops engineeer, you are responsible for creating and managing the TEST / PROD (or more) Stages' resources in an automated way. To do so, you will be designing a pipeline using AWS CodePipeline services. As you can see below, 
 
 <img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/8-Merged-Test-Prod.png" width="450" height="500">
  
