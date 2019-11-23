@@ -5,11 +5,11 @@ As a DevOps Engineer, your responsibilities also include managing CI/CD pipeline
 
 Designing and configuring all these services in a pipeline with AWS CodePipeline is not adding value to the business, so it is better to automate the pipeline generation as well.
 
-We will prepare an AWS CloudFormation Template, that will create all resources required for the CI/CD pipeline. In this AWS CloudFormation template, we will use NESTED templates that will help us to reuse the sub-templates, and design easier if any change required. CI/CD pipeline will be as the diagra below.
+We will prepare an AWS CloudFormation Template, that will create all resources required for the CI/CD pipeline. In this AWS CloudFormation template, we will use NESTED templates that will help us to reuse the sub-templates, and design easier if any change required. CI/CD pipeline will be as the diagram below.
 
 <img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/20-Pipeline-diagram-merged.png" width="450" height="500">
 
-##Let's do it together
+## Let's do it together
 
 1. Open Amazon S3 Dashboard and find the object "master-formation.yaml" URL under hb-projectq bucket, CICDScripts folder or you can know from the S3 URL template
  
@@ -83,6 +83,8 @@ https://hb-projectq.s3-us-west-2.amazonaws.com/CICDScripts/master-formation.yaml
 ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/19-codepipeline-cicd.png)
 
 6. You will see the recently created pipeline stacks and its actions in a diagram. 
+
+<img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/20-Pipeline-diagram-merged.png" width="450" height="500">
 
 
 
