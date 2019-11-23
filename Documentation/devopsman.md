@@ -3,7 +3,7 @@
 
 As a devops engineeer, you are responsible for creating and managing the TEST / PROD Stages resources in an automated way. To do so you will be designing a pipeline using AWS CodePipeline services. As you can see below, 
 
-//// PIPELINE EKRANI...
+<img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/8-Merged-Test-Prod.png" width="450" height="500">
 
  1. adimlari acikla...
  
@@ -58,7 +58,7 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
  7. First we will create the TEST stage's resources as defined in architecture diagram above. In AWS Cloud9 IDE, ProjectQ/CFN-Templates-Repo/EnvScripts folder stores the AWS CloudFormation template and configuration files. The main AWS CloudFormation template file is **StackPipeline.yml**
  _StackPipeline.yml_ will create the pipeline, using AWS CodePipeline Service. As you can see in figure below, this pipeline will have XXX actions
  
- BURAYI DOLDUR..RESIMDEN SONRA..
+ <img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/8-Merged-Test-Prod.png" width="450" height="500">
  
  
  8. You can do some parameter changes for the architecture in **test-stack-configuration.yaml** and **prod-stack-configuration** files, according to our project needs.
