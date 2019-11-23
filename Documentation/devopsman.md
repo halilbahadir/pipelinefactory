@@ -4,9 +4,6 @@
 As a devops engineeer, you are responsible for creating and managing the TEST / PROD Stages resources in an automated way. To do so you will be designing a pipeline using AWS CodePipeline services. As you can see below, 
 
 <img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/8-Merged-Test-Prod.png" width="450" height="500">
-
- 1. adimlari acikla...
- 
  
  
  ## Let's do it together..
@@ -162,3 +159,31 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
    Click _Create Stack_
  
     
+15. It will quickly create all AWS CodePipeline resource on AWS. In AWS CloudFormation Dashboard, check if _ProjectQEnvStack_ status is **CREATE_COMPLETE**.  
+
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/11-OnlyProjectStackPipeline.png)
+
+
+16. Open AWS CodePipeline and click on the _PL-ProjectQ_ pipeline in the list. You will see the pipeline stacks and its actions in a diagram. 
+
+17. After the pipeline is created, the pipeline will start execution starting with the first stage (_StackSource_). After the first stage is successfull than second stage (_TestStage_) will start and as first action of the stack is deploying a AWS CloudFormation template. 
+
+18. Go back to the AWS CloudFormation Dashboard and you will see another stack execution is started (CREATE_IN_PROGRESS). This stack is the one that triggered by the AWS CodePipeline's _CreateStack_ action.
+
+19. It will take some time to create all TEST environment resources on AWS. In AWS CloudFormation Dashboard, check if _Test-ProjectQ_ status is **CREATE_COMPLETE**. 
+
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/10-TestStack.png).
+
+20. As you can see above in the figure, the outputs tab has the URL key, that is the Application Load Balancer URL. Open link in a new browser tab. While creating the Amazon EC2 instance, we added (by user data) a basic page, to see if the instance is running. This is the page that you see in browser saying "Hello World!"
+
+21.  Open AWS CodePipeline and click on the _PL-ProjectQ_ pipeline in the list. You will see the pipeline stacks and _ApproveTestStack_ action is waiting your manual approval to continue to execute the pipeline. 
+
+22. Click on "Approve" button to approve the TEST environment is successfully created.
+
+23. Pipeline will start the _ProdStage_ stage, with _CreateChangeSet_ action. Click on the "Details" link in the action frame.
+
+24. It will open a browser tab for list of the changes. Because there is no resource in the PROD stage so all AWS resources. will be created.
+
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/12-prodChangeSets.png) 
+
+Congrats...You have successfully created the TEST environment.
