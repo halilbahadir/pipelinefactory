@@ -188,8 +188,10 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
 
 AWS CloudFormation did not create any AWS Resources for the PROD stage yet, it only showed the  resources changes if you execute.
 
-Let's stop in here..Because we don't need the PROD environment yet.
+
+Congrats...You have successfully created the TEST environment.
+
+Let's stop in here..Because we don't need the PROD environment now.
 
 IT's [DEVELOPER](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/developer.md) TIME..
 
-Congrats...You have successfully created the TEST environment.
