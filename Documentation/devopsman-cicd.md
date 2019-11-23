@@ -7,7 +7,7 @@ Designing and configuring all these services in a pipeline with AWS CodePipeline
 
 We will prepare an AWS CloudFormation Template, that will create all resources required for the CI/CD pipeline. In this AWS CloudFormation template, we will use NESTED templates that will help us to reuse the sub-templates, and design easier if any change required. CI/CD pipeline will be as the diagra below.
 
-BURAYA PIPELINE DIAGRAM GELECEK...
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/20-Pipeline-diagram-merged.png)
 
 
 ##Let's do it together
@@ -63,19 +63,29 @@ https://hb-projectq.s3-us-west-2.amazonaws.com/CICDScripts/master-formation.yaml
   
   * CodeCommitStack (codecommit-formation.yaml) 
   
-   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/14-CFN-cicd-commit.png)
+   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/15-CFN-cicd-commit.png)
  
   * CodeBuildStack (codebuild-formation.yaml)
   
-   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/14-CFN-cicd-build.png)
+   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/16-CFN-cicd-build.png)
    
   * CodeDeployStack (codedeploy-formation.yaml)
  
-   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/14-CFN-cicd-deploy.png)
+   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/17-CFN-cicd-deploy.png)
   
   * CodePipelineStack (codepipeline-formation.yaml)
  
-   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/14-CFN-cicd-pipeline.png)
+   ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/18-CFN-cicd-pipeline.png)
+   
+   Wait until **ProjectQ-CICD** stack's status is "CREATE_COMPLETE". That means all nested stack's statuses are "CREATE_COMPLETE".
+   
+5. Open AWS Codepipeline Dashboard and click the pipeline thats name start with "ProjectQ".
+
+![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/19-codepipeline-cicd.png)
+
+6. You will see the recently created pipeline stacks and its actions in a diagram. 
+
+
 
 
 
