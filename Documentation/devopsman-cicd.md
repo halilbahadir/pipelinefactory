@@ -7,8 +7,7 @@ Designing and configuring all these services in a pipeline with AWS CodePipeline
 
 We will prepare an AWS CloudFormation Template, that will create all resources required for the CI/CD pipeline. In this AWS CloudFormation template, we will use NESTED templates that will help us to reuse the sub-templates, and design easier if any change required. CI/CD pipeline will be as the diagra below.
 
-![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/20-Pipeline-diagram-merged.png)
-
+<img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/20-Pipeline-diagram-merged.png" width="450" height="500">
 
 ##Let's do it together
 
