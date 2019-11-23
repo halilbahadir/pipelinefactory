@@ -1,4 +1,4 @@
-#DEVOPS ENGINEER
+## DEVOPS ENGINEER
 
 
 As a devops engineeer, you are responsible for creating and managing the TEST / PROD Stages resources in an automated way. To do so you will be designing a pipeline using AWS CodePipeline services. As you can see below, 
@@ -56,10 +56,15 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
  ```
  
  7. First we will create the TEST stage's resources as defined in architecture diagram above. In AWS Cloud9 IDE, ProjectQ/CFN-Templates-Repo/EnvScripts folder stores the AWS CloudFormation template and configuration files. The main AWS CloudFormation template file is **StackPipeline.yml**
- _StackPipeline.yml_ will create the pipeline, using AWS CodePipeline Service. As you can see in figure below, this pipeline will have XXX actions
+ _StackPipeline.yml_ will create the pipeline, using AWS CodePipeline Service. As you can see in figure below, 
  
  <img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/8-Merged-Test-Prod.png" width="450" height="500">
  
+ There are 3 stages in pipeline
+ 
+  * _StackSource_ is the first stage. This stack has 1 source action (_TemplateSource_) provided by AWS CodeCommit that listens the events from AWS CodeCommit and pipeline is triggered by the each new commits. 
+  * _TestStack_ is the second stage. This stack has 2 actions (_CreateStack_ and _ApproveTestStack_). _CreateStack_ action is deploy action, provided by AWS CloudFormation. We configure the action by setting the AWS CloudFormation Template file (_environment-stack-formation.yaml_) and configuration file (_test-stack-configuration.json_) as input. _ApproveTestStack_ is a manual approval action, waits manual approve/refect input to continue or stop the pipeline execution. 
+  * _ProdStack_ is the third stage. This stack has 3 actions (_CreateChangeSet_, _ApproveChangeSet_ and _ExecuteChangeSet_). _CreateChangeSet_  action is deploy action, provided by AWS CloudFormation. When you need to update a stack, understanding how your changes will affect running resources before you implement them can help you update stacks with confidence. AWS CloudFormation makes the changes to your stack only when you decide to execute the change set, allowing you to decide whether to proceed with your proposed changes or explore other changes by creating another change set. Actually we are not changing anything in Prod environment initially, but for future changes, it is important to knw what will change in PROD environment, before executing. _ApproveChangeSet_ is a manual approval action, waits manual approve/refect input to continue or stop the pipeline execution. This step is needed to get approval for the PROD changes. _ExecuteChangeSet_ action is deploy action, provided by AWS CloudFormation. This action executes the change sets that are defined in _CreateChangeSet_ action.
  
  8. You can do some parameter changes for the architecture in **test-stack-configuration.yaml** and **prod-stack-configuration** files, according to our project needs.
  
