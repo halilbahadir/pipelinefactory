@@ -87,7 +87,7 @@ https://hb-projectq.s3-us-west-2.amazonaws.com/CICDScripts/master-formation.yaml
 <img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/20-Pipeline-diagram-merged.png" width="450" height="500">
 
 
-
+As you can see from the diagram, _Source_ stage is failed, because developers didn't start coding yet, so there is no branch created in repository. 
 
 
 IT's [DEVELOPER](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/developer.md) TIME..
