@@ -163,9 +163,10 @@ Open AWS CloudFormation dashboard. You will see all the executed templates.
 
 24. If _DeployProd_ stage is successful, refresh the prod page.
 
-
-Congrats..You have successfully deployed the applications..
 ![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/29-Test-Page.png)
 
+
+
+## Congrats..You have successfully deployed the applications..
 
 
