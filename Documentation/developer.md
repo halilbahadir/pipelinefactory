@@ -103,8 +103,7 @@ https://git-codecommit.us-west-2.amazonaws.com/v1/repos/ProjectQRepo
 
 12. Pipeline diagram shows the status of the each Stage and each stage's actions. Our pipeline will execute (if all steps are successful of course) till _DeployProd_ stages _ApproveToProd_ action. Because that action is "manual approval" waiting Product Owner (or DevOps Engineer) approval.
 
-![alt text](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/25-waitingProd-cicd.png)
-
+<img src="https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/25-waitingProd-cicd.png" width="450" height="500">
 
 We deployed to the TEST environment but not PROD environment yet. Let's check if we really did.
 
