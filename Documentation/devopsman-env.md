@@ -193,5 +193,5 @@ Congrats...You have successfully created the TEST environment.
 
 Let's stop in here..Because we don't need the PROD environment now.
 
-IT's [DEVELOPER](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/developer.md) TIME..
+IT's [CI/CD](https://github.com/halilbahadir/pipelinefactory/blob/master/Documentation/devopsman-cicd.md) TIME..
 
