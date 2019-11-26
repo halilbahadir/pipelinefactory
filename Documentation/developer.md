@@ -56,7 +56,7 @@ https://git-codecommit.us-west-2.amazonaws.com/v1/repos/ProjectQRepo
  
  6. Our goal in this lab is to show how to automate CI/CD pipeline resources creation, not to show how to develop a web application. So instead of coding everything, we will use a sample application to show the how Ci/CD pipeline will work. Sample application archive file will be downloaded from Amazon S3.
  
- ```
+ ```console
  #Download archive.tar.gz a project 
  developer:~/environment/ProjectQRepo $ aws s3 sync  s3://hb-cloudformation-templates/projectzip/archive.tar.gz .
  
@@ -73,7 +73,7 @@ https://git-codecommit.us-west-2.amazonaws.com/v1/repos/ProjectQRepo
  
 8. We developed our codes in our development environment (AWS Cloud9 IDE) and now it's time to add them in version control (AWS CodeCommit) that we alredy cloned the empty repository.
 
- ```
+ ```console
  #check the status of the files in your environment
  developer:~/environment/ProjectQRepo (master) $ git status
  
@@ -141,7 +141,7 @@ Open AWS CloudFormation dashboard. You will see all the executed templates.
  
  20. Save the index.html file than commit and push changes to AWS CodeCommit repository.
  
- ```
+ ```console
  #Check if you saved the index.html
  developer:~/environment/ProjectQRepo (master) $ git status
  
