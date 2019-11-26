@@ -113,7 +113,7 @@ As a devops engineeer, you are responsible for creating and managing the TEST / 
  devopsman:~/environment/CFN-Templates-Repo (master) $ aws s3 ls
  
  #Upload your all files in AWS Cloud9 to recently created 'projectq' Amazon S3 bucket.
- devopsman:~/environment/CFN-Templates-Repo (master) $ aws s3 sync . s3://hb-projectq
+ devopsman:~/environment/CFN-Templates-Repo (master) $ aws s3 sync . s3://hb-projectq --exclude ".git/*"
  
  #Check if the files are uploaded. You must see all files in your AWS Cloud9 environment's folder CFN-Templates-Repo/CICDScripts/ in the command output
  devopsman:~/environment/CFN-Templates-Repo (master) $ aws s3 ls s3://hb-projectq/CICDScripts/
