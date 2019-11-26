@@ -61,7 +61,7 @@ https://git-codecommit.us-west-2.amazonaws.com/v1/repos/ProjectQRepo
  developer:~/environment/ProjectQRepo $ aws s3 sync  s3://hb-cloudformation-templates/projectzip/ .
  
  #Unzip the archive file, you will see the folders and files
- developer:~/environment/ProjectQRepo (master) $ tar -xvfz archive.tar.gz
+ developer:~/environment/ProjectQRepo (master) $ tar -xvf archive.tar.gz
  
  #Delete the archive file. 
  developer:~/environment/ProjectQRepo (master) $ rm archive.tar.gz 
