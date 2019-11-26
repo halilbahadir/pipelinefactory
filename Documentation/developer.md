@@ -58,7 +58,7 @@ https://git-codecommit.us-west-2.amazonaws.com/v1/repos/ProjectQRepo
  
  ```
  #Download archive.tar.gz a project 
- developer:~/environment/ProjectQRepo $ aws s3 sync  s3://hb-cfn-templates/projectzip/archive.tar.gz .
+ developer:~/environment/ProjectQRepo $ aws s3 sync  s3://hb-cloudformation-templates/projectzip/archive.tar.gz .
  
  #Unzip the archive file, you will see the folders and files
  developer:~/environment/ProjectQRepo (master) $ tar -xvfz archive.tar.gz
